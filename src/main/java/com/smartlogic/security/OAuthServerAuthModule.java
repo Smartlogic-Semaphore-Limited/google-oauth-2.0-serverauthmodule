@@ -262,7 +262,14 @@ public class OAuthServerAuthModule implements ServerAuthModule {
 
     LOGGER.log(Level.FINE, "Subject from Login Context: {0}", lcSubject);
 
-    final List<String> groups = buildGroupNames(userInfo, lcSubject.getPrincipals(), tokenGroups);
+    String finalTokenGroups = tokenGroups;
+    if ((finalTokenGroups == null || finalTokenGroups.length() < 1) && userInfo.getGroups() != null ) {
+      for (String group : userInfo.getGroups()) {
+        finalTokenGroups += group + ",";
+      }
+    }
+
+    final List<String> groups = buildGroupNames(userInfo, lcSubject.getPrincipals(), finalTokenGroups);
 
     setCallerPrincipal(subject, userInfo, groups);
     messageInfo.getMap().put(AUTH_TYPE_INFO_KEY, AUTH_TYPE_OAUTH_KEY);

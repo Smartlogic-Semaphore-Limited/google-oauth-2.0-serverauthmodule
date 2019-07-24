@@ -27,6 +27,7 @@ public class UserInfo implements Serializable {
   private final String link;
   private final String picture;
   private final String locale;
+  private final String[] groups;
 
   public UserInfo() {
     this.id = null;
@@ -40,6 +41,7 @@ public class UserInfo implements Serializable {
     this.link = null;
     this.picture = null;
     this.locale = null;
+    this.groups = null;
   }
 
   public String getEmail() {
@@ -84,5 +86,9 @@ public class UserInfo implements Serializable {
 
   public boolean isVerifiedEmail() {
     return verifiedEmail;
+  }
+
+  public String[] getGroups() {
+    return groups;
   }
 }
