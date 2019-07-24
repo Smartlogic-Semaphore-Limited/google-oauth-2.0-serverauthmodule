@@ -3,5 +3,6 @@
 .project
 .settings/
 .checkstyle
-
 target/
+.idea/**
+**.iml

@@ -69,6 +69,7 @@ public class OAuthServerAuthModule implements ServerAuthModule {
   private static final String CLIENTID_PROPERTY_NAME = "oauth.clientid";
   private static final String CLIENTSECRET_PROPERTY_NAME = "oauth.clientsecret";
   private static final String CALLBACK_URI_PROPERTY_NAME = "oauth.callback_uri";
+  private static final String CALLBACK_RELATIVE_URI_PROPERTY_NAME = "oauth.callback_relative_path";
   private static final String IGNORE_MISSING_LOGIN_CONTEXT = "ignore_missing_login_context";
   private static final String ADD_DOMAIN_AS_GROUP = "add_domain_as_group";
   private static final String DEFAULT_GROUPS_PROPERTY_NAME = "default_groups";
@@ -87,6 +88,7 @@ public class OAuthServerAuthModule implements ServerAuthModule {
   private URI tokenApi;
   private URI userInfoApi;
   private String oauthAuthenticationCallbackUri;
+  private String oauthAuthenticationCallbackRelativePath;
   private boolean ignoreMissingLoginContext;
   private boolean addDomainAsGroup;
   private String defaultGroups;
@@ -140,8 +142,12 @@ public class OAuthServerAuthModule implements ServerAuthModule {
       aex.initCause(ex);
       throw aex;
     }
+    /* If specified in config, this is the full callback URL. Must end with relativePath or relative path will be added */
     this.oauthAuthenticationCallbackUri =
-        retrieveOptionalProperty(options, CALLBACK_URI_PROPERTY_NAME, DEFAULT_OAUTH_CALLBACK_PATH);
+        retrieveOptionalProperty(options, CALLBACK_URI_PROPERTY_NAME, null);
+    /* The relative path for the callback. This is used to identify the callback in this code */
+    this.oauthAuthenticationCallbackRelativePath =
+        retrieveOptionalProperty(options, CALLBACK_RELATIVE_URI_PROPERTY_NAME, DEFAULT_OAUTH_CALLBACK_PATH);
     this.ignoreMissingLoginContext = Boolean.parseBoolean(
         retrieveOptionalProperty(options, IGNORE_MISSING_LOGIN_CONTEXT, Boolean.toString(false)));
     this.addDomainAsGroup = Boolean.parseBoolean(
@@ -385,28 +391,31 @@ public class OAuthServerAuthModule implements ServerAuthModule {
   }
 
   boolean isOauthResponse(final HttpServletRequest request) {
-    return request.getRequestURI().contains(oauthAuthenticationCallbackUri);// FIXME needs better
+    return request.getRequestURI().contains(oauthAuthenticationCallbackRelativePath);// FIXME needs better
                                                                             // check
   }
 
   String buildRedirectUri(final HttpServletRequest request) {
-    return buildRedirectUri(request, oauthAuthenticationCallbackUri);
+    return buildRedirectUri(request, oauthAuthenticationCallbackRelativePath, oauthAuthenticationCallbackUri);
   }
 
-  String buildLogonRedirectUri(final HttpServletRequest request) {
-    return buildRedirectUri(request, loginForward);
-  }
-
-  String buildRedirectUri(final HttpServletRequest request, String relativeUri) {
+  String buildRedirectUri(final HttpServletRequest request, String relativeUri, String callbackUri) {
     final String serverScheme = request.getScheme();
-    final String serverUserInfo = null;
     final String serverHost = request.getServerName();
     final int serverPort = request.getServerPort();
     final String path = request.getContextPath() + relativeUri;
-    final String serverFragment = null;
     try {
-      return new URI(serverScheme, serverUserInfo, serverHost, serverPort, path, null,
-          serverFragment).toString();
+      /* If config does not specify an explicit callback URI, construct it and return it */
+      if (callbackUri == null || callbackUri.length() < 1) {
+        return new URI(serverScheme, null, serverHost, serverPort, path, null, null)
+            .toString();
+      }
+
+      /* If configured callbackUri does not end with relativeUri path, add it and return */
+      if (!callbackUri.endsWith(relativeUri))
+        return callbackUri + relativeUri;
+
+      return callbackUri;
     } catch (URISyntaxException ex) {
       throw new IllegalStateException("Unable to build redirectUri", ex);
     }

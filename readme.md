@@ -46,9 +46,21 @@ Google Example: `https://www.googleapis.com/oauth2/v4/token`
 Google Example: `https://www.googleapis.com/oauth2/v3/userinfo`
 
 #### `oauth.callback_uri` (_optional_) 
+default: `null`
+
+`oauth.callback_uri` is the URL that the OpenID Connect provider will redirect the browser to after the user responds to the request.  This should correspond to "`Redirect URIs`" value defined in the OAuth2 Client API Console for your provider.
+The default value is null, which means the callback URI will be constructed using the Tomcat Request object and the oauth.callback_relative_path property value.
+Specify an explicit full callback URI if required, for example if your router handles SSL/TLS and the request scheme in tomcat would come through as just HTTP but you want to preserve HTTPS.
+
+#### `oauth.callback_relative_path` (_optional_) 
 default: `/j_oauth_callback`
 
-`oauth.callback_uri` is the URI that Google will redirect to after the user responds to the request.  This should correspond to "`Redirect URIs`" value defined in the OAuth2 Client API Console for your provider.
+`oauth.callback_relative_path` is the relative path added to the callback URI to indicate that the HTTP request is a callback from OAuth. 
+If you specify a oauth.callback_uri, that property value should end with this relative path. 
+If it does not, the module will append the relative path to the callback URL.
+For example, full callback URLs might be http://localhost:8080/SW/j_oauth_callback or http://localhost:8080/SW. 
+In the first case, the URL ends with the path "/j_oauth_callback" so the URL would not be modified.
+In the second case, the path "/j_oauth_callback" is missing at the end of the URL, so the module would add the path to yield the full callback http://localhost:8080/SW/j_oauth_callback.
 
 #### `javax.security.auth.login.LoginContext` (_optional_)
 default: `"com.smartlogic.security.google.OAuthServerAuthModule"`
@@ -67,7 +79,6 @@ default: `"false"`
 If `add_domain_as_group` is `true`, then the domain of the email address of the authenticated user will be added as a group.  IE: "smartlogic.com" will be a principal added as a group for the user "rick.ahlander@smartlogic.com".
 
 
-
 #### `default_groups` (_optional_)
 default: `""`
 
@@ -77,6 +88,9 @@ default: `""`
 default: '"openid email profile"'
 
 'oauth.scope' is a space (" ") separated list of scopes requested from your OAuth2 provider.
+To use Okta groups, add the "groups" scope to your Okta web app and add "groups" to your oauth.scope. 
+You must enable the "groups" claim in your Okta authentication server and/or web application.
+See [https://developer.okta.com/docs/guides/create-token-with-groups-claim/-/create-groups-claim/]
 
 #### `login_request_param` (_optional_)
 default: '(none)'
@@ -119,23 +133,23 @@ See [Tomcat JASPIC Configuration][tomcat85-jaspic]
         	<property name="org.apache.catalina.authenticator.jaspic.ServerAuthModule.1"
            	value="com.smartlogic.security.OAuthServerAuthModule" />
         	<property name="oauth.auth_uri"
-		    	value="https://accounts.google.com/o/oauth2/v2/auth" />
-			<property name="oauth.userinfo_uri"
-				value="https://www.googleapis.com/oauth2/v3/userinfo" />
-			<property name="oauth.token_uri"
-			  	value="https://www.googleapis.com/oauth2/v4/token" />
-			<property name="oauth.clientid"
-            	value="MY_GOOGLE_CLIENT_ID" />
-        	<property name="oauth.clientsecret"
-            	value="MY_GOOGLE_CLIENT_SECRET" />
-        	<property name="ignore_missing_login_context"
-            	value="true" />
-        	<property name="login_request_param"
-            	value="oauth.loginProvider=google" />
-        	<property name='default_groups'
-            	value='SemaphoreUsers,SemaphoreAdministrators'/>
-        	<property name="forward_to_if_not_authenticated"
-            	value="/logon.jsp" />
+            value="https://accounts.google.com/o/oauth2/v2/auth" />
+          <property name="oauth.userinfo_uri"
+            value="https://www.googleapis.com/oauth2/v3/userinfo" />
+          <property name="oauth.token_uri"
+            value="https://www.googleapis.com/oauth2/v4/token" />
+          <property name="oauth.clientid"
+            value="MY_GOOGLE_CLIENT_ID" />
+          <property name="oauth.clientsecret"
+            value="MY_GOOGLE_CLIENT_SECRET" />
+          <property name="ignore_missing_login_context"
+            value="true" />
+          <property name="login_request_param"
+            value="oauth.loginProvider=google" />
+          <property name='default_groups'
+            value='SemaphoreUsers,SemaphoreAdministrators'/>
+          <property name="forward_to_if_not_authenticated"
+            value="/logon.jsp" />
         </provider>
 	</jaspic-providers>
 
@@ -151,22 +165,28 @@ See [Tomcat JASPIC Configuration][tomcat85-jaspic]
 	        appContext="Catalina/localhost /contextPath"
 	        description="OKTA OAUTH">
 	        
-	        <property name="org.apache.catalina.authenticator.jaspic.ServerAuthModule.1"
-	            value="com.smartlogic.security.OAuthServerAuthModule" />
-	        <property name="oauth.clientid"
-	            value="Obtained-from OKTA-Application-Setup" />
-	        <property name="oauth.clientsecret"
-	            value="Obtained-from-OKTA-Application-Setup" />
-	        <property name="oauth.endpoint"
-				  value="https://oktaauthendpoint.oktapreview.com/oauth2/oktapplicationkey/v1" />
-	        <property name="ignore_missing_login_context"
-	            value="true" />
+          <property name="org.apache.catalina.authenticator.jaspic.ServerAuthModule.1"
+              value="com.smartlogic.security.OAuthServerAuthModule" />
+          <property name="oauth.clientid"
+              value="Obtained-from OKTA-Application-Setup" />
+          <property name="oauth.clientsecret"
+              value="Obtained-from-OKTA-Application-Setup" />
+          <property name="oauth.endpoint"
+              value="https://oktaauthendpoint.oktapreview.com/oauth2/oktapplicationkey/v1" />
+          <property name="oauth.callback_uri"
+              value="https://localhost:8443/SW"/>
+          <property name="oauth.callback_relative_path"
+              value="/j_oauth_callback"/>
+          <property name="oauth.scope"
+              value="openid groups email profile"/>
+          <property name="ignore_missing_login_context"
+              value="true" />
           <property name="login_request_param"
               value="oauth.loginProvider=okta" />
           <property name="forward_to_if_not_authenticated"
               value="/logon.jsp" />
-	        <property name="default_groups"
-				  value="SemaphoreUsers" />
+          <property name="default_groups"
+              value="SemaphoreUsers" />
 	    </provider>
     </jaspic-providers>
 
