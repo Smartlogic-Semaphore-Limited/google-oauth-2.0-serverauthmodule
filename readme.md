@@ -190,6 +190,43 @@ See [Tomcat JASPIC Configuration][tomcat85-jaspic]
 	    </provider>
     </jaspic-providers>
 
+###AZURE AD Tomcat Config Example
+
+    <jaspic-providers xmlns="http://tomcat.apache.org/xml"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://tomcat.apache.org/xml jaspic-providers.xsd"
+                  version="1.0">
+	    <provider name="azure-oauth"
+	        className="org.apache.catalina.authenticator.jaspic.SimpleAuthConfigProvider"
+	        layer="HttpServlet"
+	        appContext="Catalina/localhost /contextPath"
+	        description="AZURE OAUTH">
+
+          <property name="org.apache.catalina.authenticator.jaspic.ServerAuthModule.1"
+              value="com.smartlogic.security.OAuthServerAuthModule" />
+          <property name="oauth.clientid"
+              value="Obtained-from Azure-Application-Setup" />
+          <property name="oauth.clientsecret"
+              value="Obtained-from-Azure-Application-Setup" />
+          <property name="oauth.endpoint"
+              value="https://login.microsoftonline.com/common/oauth2/v2.0"/>
+          <property name="oauth.callback_uri"
+              value="https://localhost:8443/SW"/>
+          <property name="oauth.callback_relative_path"
+              value="/j_oauth_callback"/>
+          <property name="oauth.scope"
+              value="openid profile email"/>
+          <property name="ignore_missing_login_context"
+              value="true" />
+          <property name="login_request_param"
+              value="oauth.loginProvider=azure" />
+          <property name="default_groups"
+              value="SemaphoreUsers" />
+	      <property name="oauth.userinfo_uri"
+			  value="https://graph.microsoft.com/oidc/userinfo" />
+	    </provider>
+    </jaspic-providers>
+
 Usage
 =====
 

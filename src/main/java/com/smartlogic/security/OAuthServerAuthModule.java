@@ -348,7 +348,18 @@ public class OAuthServerAuthModule implements ServerAuthModule {
       }
       return AuthStatus.SEND_CONTINUE;
     }
-    return AuthStatus.SEND_FAILURE;
+    LOGGER.log(Level.INFO, "send failuree");
+    try {
+      if (request.getHeader("Accept") != null &&
+          request.getHeader("Accept").toLowerCase().contains("application/json")) {
+        response.sendError(401);
+      } else {
+        response.sendRedirect(request.getContextPath() + "/ui/?from=" + request.getRequestURI());
+      }
+      return AuthStatus.SEND_FAILURE;
+    } catch (IOException ex) {
+      throw new IllegalStateException("Unable to send error code", ex);
+    }
   }
 
   /**
