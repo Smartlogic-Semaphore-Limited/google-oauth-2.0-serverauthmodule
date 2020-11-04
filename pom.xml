@@ -12,7 +12,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.smartlogic.security</groupId>
   <artifactId>oauth-2_0-sam</artifactId>
-  <version>0.2.5-SNAPSHOT</version>
+  <version>0.2.6-SNAPSHOT</version>
 
   <repositories>
     <repository>
